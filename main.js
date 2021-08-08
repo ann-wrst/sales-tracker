@@ -7,12 +7,6 @@ let url;
 sqlite.connect('./db/sales.db');
 const bot = new Telegraf(token);
 
-const fn = (answer, chatID) => {
-    setInterval(async () => {
-        await bot.telegram.sendMessage(chatID, answer);
-        //ctx.reply(answer);
-    }, 20000);
-}
 
 bot.launch().then(async () => {
     await launchTimer();
@@ -100,10 +94,10 @@ function getDomain(url, subdomain) {
     return url;
 }
 
-async function launchTimer() {
+function launchTimer() {
     let timerId = setInterval(async () => {
         let rows = sqlite.run("SELECT * FROM sales;");
-        await rows.forEach(async (item) => {
+        for (let item of rows) {
             switch (item.domain) {
                 case 'reserved.com':
                 case 'sinsay.com':
@@ -111,30 +105,22 @@ async function launchTimer() {
                 case 'mohito.com':
                 case 'cropp.com': {
                     let answer = await getReservedMetadata(item.url);
-                    let result = sqlite.run(`SELECT old_price, new_price FROM sales WHERE url='${item.url}' AND user_id=${item.user_id}`);
-                    if (result[0].old_price === +answer.oldPrice && result[0].new_price === +answer.price) return;
-                    else //update db request and send message
-                        console.log(result);
-                    console.log("______________")
-                    //    fn(`${answer.description}\nСтарая цена ${answer.oldPrice} ${answer.oldPriceCurrency}\nНовая цена ${answer.price} ${answer.priceCurrency}`, item.user_id);
-                    break;
+                    if (item.old_price === +answer.oldPrice && item.new_price === +answer.price) return;
+                    else {
+                        let previous_price = item.new_price;
+                        let new_price = answer.price;
+                        sqlite.run(`UPDATE sales SET new_price = ${answer.price} WHERE id=${item.id};`);
+                        let message = `The price of ${item.description}\n ${item.url} was changed from ${previous_price} to ${new_price}`;
+                        await bot.telegram.sendMessage(item.user_id, message);
+                    }
+                   break;
                 }
                 default:
                     break;
             }
-        });
-        //  trackReservedSales()
+        }
     }, 4000);
-
 }
-
-let trackReservedSales = () => {
-    //const data = getReservedMetadata(url, domain, chatID);
-    //select price, oldPrice
-    //pass url
-
-}
-// name - url: array of objects
 
 let getMeta = (property) => `<meta property="${property}" content="`;
 let getRegular = (property) => new RegExp(`${getMeta(property)}(.*?)">`, "g");
