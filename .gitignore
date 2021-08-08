@@ -1,0 +1,18 @@
+### Intellij ###
+*.iml
+.idea/
+.idea_modules/
+/out/
+
+### Node ###
+logs
+pids
+*.log
+*.pid
+*.db
+*.seed
+
+build/Release
+node_modules
+db
+config.js
