@@ -4,14 +4,15 @@ import {token} from './config.js'
 import sqlite from 'sqlite-sync'
 
 let url;
-sqlite.connect('./db/sales.db');
+let reload = () => {
+    sqlite?.connect('./db/sales.db');
+}
+reload();
 const bot = new Telegraf(token);
-
 
 bot.launch().then(async () => {
     await launchTimer();
 });
-
 
 bot.start((ctx) => ctx.reply('Welcome'))
 bot.command('new', (ctx) => {
@@ -32,7 +33,7 @@ bot.on('text', async ctx => {
         case 'mohito.com':
         case 'cropp.com': {
             let answer = await processReservedMetadata(url, domain, ctx.message.chat.id);
-            fn(answer, ctx.message.chat.id);
+            ctx.reply(answer);
             break;
         }
         default:
@@ -58,7 +59,7 @@ async function processReservedMetadata(url, domain, chatID) {
     return `${data.description}\nСтарая цена ${data.oldPrice} ${data.oldPriceCurrency}\nНовая цена ${data.price} ${data.priceCurrency}`;
 }
 
-function addToDB(url, description, domain, price, oldPrice, chatID) {
+async function addToDB(url, description, domain, price, oldPrice, chatID) {
     if (sqlite.run(`SELECT url FROM sales WHERE user_id=${chatID} AND url='${url}'`).length !== 0) return false;
     else {
         const db_request = `INSERT INTO sales(url, description, domain, new_price, old_price, user_id) VALUES('${url}', '${description}', '${domain}', ${price}, ${oldPrice},${chatID});`;
@@ -94,8 +95,9 @@ function getDomain(url, subdomain) {
     return url;
 }
 
-function launchTimer() {
+async function launchTimer() {
     let timerId = setInterval(async () => {
+        reload();
         let rows = sqlite.run("SELECT * FROM sales;");
         for (let item of rows) {
             switch (item.domain) {
@@ -105,21 +107,24 @@ function launchTimer() {
                 case 'mohito.com':
                 case 'cropp.com': {
                     let answer = await getReservedMetadata(item.url);
-                    if (item.old_price === +answer.oldPrice && item.new_price === +answer.price) return;
-                    else {
+                    if (item.old_price === +answer.oldPrice && item.new_price === +answer.price) {
+                        console.log(item.new_price, 'same\n_________');
+                        break;
+                    } else {
+                        console.log("there is diff")
                         let previous_price = item.new_price;
                         let new_price = answer.price;
-                        sqlite.run(`UPDATE sales SET new_price = ${answer.price} WHERE id=${item.id};`);
+                        console.log(sqlite.run(`UPDATE sales SET new_price = ${+answer.price}, old_price = ${+answer.oldPrice} WHERE id=${item.id};`));
                         let message = `The price of ${item.description}\n ${item.url} was changed from ${previous_price} to ${new_price}`;
                         await bot.telegram.sendMessage(item.user_id, message);
+                        break;
                     }
-                   break;
                 }
                 default:
                     break;
             }
         }
-    }, 4000);
+    }, 8000);
 }
 
 let getMeta = (property) => `<meta property="${property}" content="`;
