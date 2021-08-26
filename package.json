@@ -2,14 +2,15 @@
   "name": "sales_tracker_bot",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "src/main.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon main.js"
+    "start": "nodemon src/main.js"
   },
   "author": "Anna",
   "license": "ISC",
   "dependencies": {
+    "csv-writer": "^1.6.0",
     "node-fetch": "^2.6.1",
     "sqlite-sync": "^0.3.9",
     "sqlite3": "^5.0.2",

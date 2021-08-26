@@ -11,15 +11,16 @@ export function getDomain(url, subdomain) {
     if (url.indexOf('/') !== -1) {
         return url.split('/')[0];
     }
-
     return url;
 }
+
 export function getCurrectTime() {
     let today = new Date();
-    let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
     let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    return date+' '+time;
+    return date + ' ' + time;
 }
+
 export function validateName(url) {
     const URLRegex = '^(https?|ftp)://[^\\s/$.?#].[^\\s]*$';
     return url.match(URLRegex);
