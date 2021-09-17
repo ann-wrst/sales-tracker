@@ -31,3 +31,7 @@ export function deleteItem(id) {
     }
     return true;
 }
+
+export function updateItem(id, new_price, old_price) {
+    sqlite.run(`UPDATE sales SET new_price = ${+new_price}, old_price = ${+old_price} WHERE id=${id};`);
+}

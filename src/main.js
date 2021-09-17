@@ -4,7 +4,7 @@ import sqlite from 'sqlite-sync'
 import {getDomain, validateName} from './utils.js'
 import {timerInterval, token} from "../config.js";
 import writeLog from "./logger.js";
-import {getList, addToDB, deleteItem} from "./db-requests.js";
+import {getList, addToDB, deleteItem, updateItem} from "./db-requests.js";
 
 let url;
 let reload = () => {
@@ -15,14 +15,14 @@ const bot = new Telegraf(token);
 
 bot.launch().then(async () => {
     await launchTimer();
-    // bot.telegram.getChat(700613897)
-    //     .then(chat => console.log(chat))
-    //     .catch(err => console.error(err));
 });
 
-bot.start((ctx) => {
+bot.start(async (ctx) => {
     ctx.reply('Welcome. Send link to track sale');
-    writeLog('Start command', ctx.message.chat.id);
+    let chat = await bot.telegram.getChat(ctx.message.chat.id)
+        .then(chat => chat.username || chat.first_name)
+        .catch(err => console.error(err));
+    writeLog(`Start command of user ${chat}`, ctx.message.chat.id);
 })
 
 bot.command('list', async (ctx) => {
@@ -47,8 +47,10 @@ bot.command('delete', async (ctx) => {
         await ctx.telegram.sendMessage(ctx.message.chat.id, `Incorrect number of item. Enter the number from \/list`);
         return;
     }
-    if (deleteItem(itemId)) await ctx.telegram.sendMessage(ctx.message.chat.id, `The item ${item.url} was deleted`);
-    else await ctx.telegram.sendMessage(ctx.message.chat.id, `There is an error deleting item`);
+    if (deleteItem(itemId)) {
+        await ctx.telegram.sendMessage(ctx.message.chat.id, `The item ${item.url} was deleted`);
+        writeLog(`Deleted item ${item.url}`, ctx.message.chat.id);
+    } else await ctx.telegram.sendMessage(ctx.message.chat.id, `There is an error deleting item`);
 })
 
 
@@ -61,12 +63,7 @@ bot.on('text', async ctx => {
 });
 
 async function getReservedMetadata(url) {
-    let context;
-    try {
-        context = await getHTML(url);
-    } catch (e) {
-        throw Error("There is an error accessing website");
-    }
+    let context = await getHTML(url);
     try {
         const description = getContent(context, "og:description");
         const oldPrice = getContent(context, "product:original_price:amount");
@@ -87,7 +84,8 @@ async function processMetadata(url, domain, chatID) {
             case 'sinsay.com':
             case 'housebrand.com':
             case 'mohito.com':
-            case 'cropp.com': {
+            case 'cropp.com':
+            case 'localhost:8081': {
                 data = await getReservedMetadata(url);
                 break;
             }
@@ -95,21 +93,17 @@ async function processMetadata(url, domain, chatID) {
                 return 'Unable to parse this site so far';
         }
         let notTracked = await addToDB(url, data.description, domain, data.price, data.oldPrice, chatID);
-        if (!notTracked) return `Product is already tracked\n${data.description}\nСтарая цена ${data.oldPrice} ${data.oldPriceCurrency}\nНовая цена ${data.price} ${data.priceCurrency}`;
+        if (!notTracked) return `Product is already tracked\n${data.description}\nOld price ${data.oldPrice} ${data.oldPriceCurrency}\nNew price ${data.price} ${data.priceCurrency}`;
 
-        return `${data.description}\nСтарая цена ${data.oldPrice} ${data.oldPriceCurrency}\nНовая цена ${data.price} ${data.priceCurrency}`;
+        return `${data.description}\nOld price ${data.oldPrice} ${data.oldPriceCurrency}\nNew price ${data.price} ${data.priceCurrency}`;
     } catch (e) {
         return e.message;
     }
 }
 
 async function getHTML(url) {
-    try {
-        const response = await fetch(url);
-        return await response.text();
-    } catch (e) {
-        throw Error("There is an error accessing website");
-    }
+    const response = await fetch(url);
+    return await response.text();
 }
 
 async function launchTimer() {
@@ -123,7 +117,8 @@ async function launchTimer() {
                 case 'sinsay.com':
                 case 'housebrand.com':
                 case 'mohito.com':
-                case 'cropp.com': {
+                case 'cropp.com':
+                case 'localhost:8081': {
                     let answer = await getReservedMetadata(item.url);
                     if (item.old_price === +answer.oldPrice && item.new_price === +answer.price) {
                         writeLog(`Values haven\'t changed of ${item.url}`, item.user_id);
@@ -131,9 +126,8 @@ async function launchTimer() {
                     } else {
                         let previous_price = item.new_price;
                         let new_price = answer.price;
-                        console.log(sqlite.run(`UPDATE sales SET new_price = ${+answer.price}, old_price = ${+answer.oldPrice} WHERE id=${item.id};`));
+                        updateItem(item.id, answer.price, answer.oldPrice);
                         let message = `The price of ${item.description}\n ${item.url} was changed from ${previous_price} to ${new_price}`;
-
                         writeLog(`Values have changed from ${previous_price} to ${new_price} of ${item.url}`, item.user_id)
                         await bot.telegram.sendMessage(item.user_id, message);
                         break;
