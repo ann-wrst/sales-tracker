@@ -126,7 +126,7 @@ async function launchTimer() {
                     } else {
                         let previous_price = item.new_price;
                         let new_price = answer.price;
-                        if(!updateItem(item.id, answer.price, answer.oldPrice)) break;
+                        if(!updateItem(item.id, answer.price, answer.oldPrice) || typeof new_price === 'undefined') break;
                         let message = `The price of ${item.description}\n ${item.url} was changed from ${previous_price} to ${new_price}`;
                         writeLog(`Values have changed from ${previous_price} to ${new_price} of ${item.url}`, item.user_id)
                         await bot.telegram.sendMessage(item.user_id, message);
