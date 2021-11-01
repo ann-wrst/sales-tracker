@@ -1,17 +1,17 @@
-export function getDomain(url, subdomain) {
-    subdomain = subdomain || false;
+import fetch from "node-fetch";
+
+export function getDomain(url) {
     url = url.replace(/(https?:\/\/)?(www.)?/i, '');
-
-    if (!subdomain) {
-        url = url.split('.');
-
-        url = url.slice(url.length - 2).join('.');
-    }
 
     if (url.indexOf('/') !== -1) {
         return url.split('/')[0];
     }
     return url;
+}
+
+export async function getHTML(url) {
+    const response = await fetch(url);
+    return await response.text();
 }
 
 export function getCurrectTime() {

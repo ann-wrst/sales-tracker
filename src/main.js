@@ -5,6 +5,7 @@ import {getDomain, validateName} from './utils.js'
 import {timerInterval, token} from "../config.js";
 import writeLog from "./logger.js";
 import {getList, addToDB, deleteItem, updateItem} from "./db-requests.js";
+import {Reserved, Rozetka} from "./Shop.js";
 
 let url;
 let reload = () => {
@@ -28,14 +29,19 @@ bot.start(async (ctx) => {
 bot.command('list', async (ctx) => {
     let list = await getList(ctx.message.chat.id);
     let message = "";
-    if (list.length === 0) message = 'No items were added';
+    if (list.length === 0) message = 'No items were found';
     for (let i = 0; i < list.length; i++) {
         message += `${i + 1}\. ` + JSON.stringify(list[i].description) + '' + JSON.stringify(list[i].url) + '\n ' + JSON.stringify(list[i].new_price) + '\n';
     }
-    await ctx.telegram.sendMessage(ctx.message.chat.id, `${message}`);
+    if (message.length > 4096) {
+        for (let x = 0; x < message.length; x += 4096) {
+            await ctx.telegram.sendMessage(ctx.message.chat.id, `${message.slice(x, x + 4096)}`);
+        }
+    } else await ctx.telegram.sendMessage(ctx.message.chat.id, `${message}`);
 })
 bot.command('delete', async (ctx) => {
     let list = await getList(ctx.message.chat.id);
+
     let itemToDelete = ctx.message.text.split(' ')[1];
     if (!itemToDelete) {
         await ctx.telegram.sendMessage(ctx.message.chat.id, `Enter 'delete' command and the number from the \/list of items that you want to delete`);
@@ -58,25 +64,12 @@ bot.on('text', async ctx => {
     url = ctx.message.text;
     if (!validateName(url)) return ctx.reply("Invalid url")
     let domain = getDomain(url);
-    let answer = await processMetadata(url, domain, ctx.message.chat.id);
+    let answer = await trackProduct(url, domain, ctx.message.chat.id);
     ctx.reply(answer);
 });
 
-async function getReservedMetadata(url) {
-    let context = await getHTML(url);
-    try {
-        const description = getContent(context, "og:description");
-        const oldPrice = getContent(context, "product:original_price:amount");
-        const oldPriceCurrency = getContent(context, "product:original_price:currency");
-        const price = getContent(context, "product:price:amount");
-        const priceCurrency = getContent(context, "product:price:currency");
-        return {url, description, price, oldPrice, oldPriceCurrency, priceCurrency};
-    } catch (e) {
-        throw Error("There is an error parsing website")
-    }
-}
 
-async function processMetadata(url, domain, chatID) {
+async function trackProduct(url, domain, chatID) {
     let data;
     try {
         switch (domain) {
@@ -86,7 +79,13 @@ async function processMetadata(url, domain, chatID) {
             case 'mohito.com':
             case 'cropp.com':
             case 'localhost:8081': {
-                data = await getReservedMetadata(url);
+                let reservedShop = new Reserved(domain);
+                data = await reservedShop.getMetadata(url);
+                break;
+            }
+            case 'rozetka.com.ua': {
+                let rozetkaShop = new Rozetka(domain);
+                data = await rozetkaShop.getMetadata(url);
                 break;
             }
             default:
@@ -99,11 +98,6 @@ async function processMetadata(url, domain, chatID) {
     } catch (e) {
         return e.message;
     }
-}
-
-async function getHTML(url) {
-    const response = await fetch(url);
-    return await response.text();
 }
 
 async function launchTimer() {
@@ -119,14 +113,15 @@ async function launchTimer() {
                 case 'mohito.com':
                 case 'cropp.com':
                 case 'localhost:8081': {
-                    let answer = await getReservedMetadata(item.url);
+                    let reservedShop = new Reserved(item.domain);
+                    let answer = await reservedShop.getMetadata(item.url);
                     if (item.old_price === +answer.oldPrice && item.new_price === +answer.price) {
                         writeLog(`Values haven\'t changed of ${item.url}`, item.user_id);
                         break;
                     } else {
                         let previous_price = item.new_price;
                         let new_price = answer.price;
-                        if(!updateItem(item.id, answer.price, answer.oldPrice) || typeof new_price === 'undefined') break;
+                        if (!updateItem(item.id, answer.price, answer.oldPrice) || typeof new_price === 'undefined') break;
                         let message = `The price of ${item.description}\n ${item.url} was changed from ${previous_price} to ${new_price}`;
                         writeLog(`Values have changed from ${previous_price} to ${new_price} of ${item.url}`, item.user_id)
                         await bot.telegram.sendMessage(item.user_id, message);
@@ -138,16 +133,4 @@ async function launchTimer() {
             }
         }
     }, timerInterval);
-}
-
-let getMeta = (property) => `<meta property="${property}" content="`;
-let getRegular = (property) => new RegExp(`${getMeta(property)}(.*?)">`, "g");
-
-let getContent = (context, property) => {
-    let regular = getRegular(property);
-    let result = context.match(regular);
-
-    if (result != null) {
-        return result[0].substring(getMeta(property).length, result[0].length - 2);
-    }
 }
