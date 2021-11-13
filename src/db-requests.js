@@ -1,6 +1,10 @@
 import sqlite from "sqlite-sync";
 import writeLog from "./logger.js";
 
+export let reload = () => {
+    sqlite?.connect('./db/sales.db');
+}
+
 export async function addToDB(url, description, domain, price, oldPrice, chatID) {
     try {
         if (sqlite.run(`SELECT url FROM sales WHERE user_id= ? AND url= ?`, [chatID, url]).length !== 0) return false;

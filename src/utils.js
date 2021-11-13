@@ -14,6 +14,11 @@ export async function getHTML(url) {
     return await response.text();
 }
 
+export async function fetchJSON(url) {
+    const response = await fetch(url);
+    return await response.json();
+}
+
 export function getCurrectTime() {
     let today = new Date();
     let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();

@@ -1,21 +1,19 @@
 import {Telegraf} from 'telegraf'
-import fetch from 'node-fetch';
 import sqlite from 'sqlite-sync'
 import {getDomain, validateName} from './utils.js'
 import {timerInterval, token} from "../config.js";
 import writeLog from "./logger.js";
-import {getList, addToDB, deleteItem, updateItem} from "./db-requests.js";
+import {getList, addToDB, deleteItem, updateItem, reload} from "./db-requests.js";
 import {Reserved, Rozetka} from "./Shop.js";
+import Tracker from "./Tracker.js";
 
 let url;
-let reload = () => {
-    sqlite?.connect('./db/sales.db');
-}
 reload();
 const bot = new Telegraf(token);
 
 bot.launch().then(async () => {
-    await launchTimer();
+    let tracker = new Tracker(bot);
+    await tracker.launchTimer();
 });
 
 bot.start(async (ctx) => {
@@ -98,39 +96,4 @@ async function trackProduct(url, domain, chatID) {
     } catch (e) {
         return e.message;
     }
-}
-
-async function launchTimer() {
-    let timerId = setInterval(async () => {
-        sqlite.close();
-        reload();
-        let rows = sqlite.run("SELECT * FROM sales;");
-        for (let item of rows) {
-            switch (item.domain) {
-                case 'reserved.com':
-                case 'sinsay.com':
-                case 'housebrand.com':
-                case 'mohito.com':
-                case 'cropp.com':
-                case 'localhost:8081': {
-                    let reservedShop = new Reserved(item.domain);
-                    let answer = await reservedShop.getMetadata(item.url);
-                    if (item.old_price === +answer.oldPrice && item.new_price === +answer.price) {
-                        writeLog(`Values haven\'t changed of ${item.url}`, item.user_id);
-                        break;
-                    } else {
-                        let previous_price = item.new_price;
-                        let new_price = answer.price;
-                        if (!updateItem(item.id, answer.price, answer.oldPrice) || typeof new_price === 'undefined') break;
-                        let message = `The price of ${item.description}\n ${item.url} was changed from ${previous_price} to ${new_price}`;
-                        writeLog(`Values have changed from ${previous_price} to ${new_price} of ${item.url}`, item.user_id)
-                        await bot.telegram.sendMessage(item.user_id, message);
-                        break;
-                    }
-                }
-                default:
-                    break;
-            }
-        }
-    }, timerInterval);
 }
