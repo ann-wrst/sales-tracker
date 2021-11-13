@@ -81,7 +81,9 @@ async function trackProduct(url, domain, chatID) {
                 data = await reservedShop.getMetadata(url);
                 break;
             }
-            case 'rozetka.com.ua': {
+            case 'rozetka.com.ua':
+            case 'bt.rozetka.com.ua':
+            case 'hard.rozetka.com.ua':{
                 let rozetkaShop = new Rozetka(domain);
                 data = await rozetkaShop.getMetadata(url);
                 break;

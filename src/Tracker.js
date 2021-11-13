@@ -27,7 +27,9 @@ class Tracker {
                         answer = await reservedShop.getMetadata(db_item.url);
                         break;
                     }
-                    case 'rozetka.com.ua': {
+                    case 'rozetka.com.ua':
+                    case 'bt.rozetka.com.ua':
+                    case 'hard.rozetka.com.ua': {
                         let rozetkaShop = new Rozetka(db_item.domain);
                         answer = await rozetkaShop.getMetadata(db_item.url);
                         break;

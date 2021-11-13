@@ -38,7 +38,7 @@ export class Rozetka extends Shop {
     async getMetadata(url) {
         //get id from url
         let id = url.match('\\/p[0-9]{7,9}\\/');
-        if (!id) throw new Error('Id of product is not found'); else {
+        if (!id) throw new Error('The product with these id is not supported to be tracked'); else {
             id = id[0].substring(2, id[0].length - 1);
         }
         let response = await fetchJSON(`https://xl-catalog-api.rozetka.com.ua/v4/goods/getDetails?front-type=xl&country=UA&lang=ru&product_ids=${id}`)
@@ -61,6 +61,7 @@ export class Makeup extends Shop {
         let description = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__description > div.product-item__name").innerHTML;
         let price = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__buy > div.product-item__row > div.product-item__price-wrap > span.product-item__price > div > span.price_item").innerHTML;
         let oldPrice = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__buy > div.product-item__row > div.product-item__price-wrap > span.product-item__old-price > span.price_item").innerHTML;
+        if (oldPrice === '0') oldPrice = price;
         let currency = 'UAH';
         return {url, description, price, oldPrice, oldPriceCurrency: currency, priceCurrency: currency};
     }
