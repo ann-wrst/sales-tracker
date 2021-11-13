@@ -1,5 +1,5 @@
 import sqlite from "sqlite-sync";
-import {Reserved, Rozetka} from "./Shop.js";
+import {Makeup, Reserved, Rozetka} from "./Shop.js";
 import {timerInterval} from "../config.js";
 import writeLog from "./logger.js";
 import {reload, updateItem} from "./db-requests.js";
@@ -30,6 +30,11 @@ class Tracker {
                     case 'rozetka.com.ua': {
                         let rozetkaShop = new Rozetka(db_item.domain);
                         answer = await rozetkaShop.getMetadata(db_item.url);
+                        break;
+                    }
+                    case 'makeup.com.ua': {
+                        let makeupShop = new Makeup(db_item.domain);
+                        answer = await makeupShop.getMetadata(db_item.url);
                         break;
                     }
                     default:

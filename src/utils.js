@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+import jsdom from "jsdom";
 
 export function getDomain(url) {
     url = url.replace(/(https?:\/\/)?(www.)?/i, '');
@@ -9,9 +10,15 @@ export function getDomain(url) {
     return url;
 }
 
-export async function getHTML(url) {
-    const response = await fetch(url);
-    return await response.text();
+export async function getHTML(url, getDom = false) {
+    const html = await fetch(url).then((response) => {
+        return response.text();
+    }).catch((error) => {
+        console.log(error);
+    });
+    if (!getDom) return html;
+    const dom = new jsdom.JSDOM(html);
+    return dom.window.document;
 }
 
 export async function fetchJSON(url) {

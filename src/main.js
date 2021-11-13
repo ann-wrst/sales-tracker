@@ -4,7 +4,7 @@ import {getDomain, validateName} from './utils.js'
 import {timerInterval, token} from "../config.js";
 import writeLog from "./logger.js";
 import {getList, addToDB, deleteItem, updateItem, reload} from "./db-requests.js";
-import {Reserved, Rozetka} from "./Shop.js";
+import {Makeup, Reserved, Rozetka} from "./Shop.js";
 import Tracker from "./Tracker.js";
 
 let url;
@@ -84,6 +84,11 @@ async function trackProduct(url, domain, chatID) {
             case 'rozetka.com.ua': {
                 let rozetkaShop = new Rozetka(domain);
                 data = await rozetkaShop.getMetadata(url);
+                break;
+            }
+            case 'makeup.com.ua': {
+                let makeupShop = new Makeup(domain);
+                data = await makeupShop.getMetadata(url);
                 break;
             }
             default:

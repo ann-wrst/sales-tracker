@@ -16,27 +16,16 @@ export class Reserved extends Shop {
     }
 
     async getMetadata(url) {
-        let context = await getHTML(url);
+        let document = await getHTML(url, true);
         try {
-            const description = this.getContent(context, "og:description");
-            const oldPrice = this.getContent(context, "product:original_price:amount");
-            const oldPriceCurrency = this.getContent(context, "product:original_price:currency");
-            const price = this.getContent(context, "product:price:amount");
-            const priceCurrency = this.getContent(context, "product:price:currency");
+            const description = document.querySelector("head > meta[property=\"og:description\"]").getAttribute('content');
+            const oldPrice = document.querySelector("head > meta[property=\"product:original_price:amount\"]").getAttribute('content');
+            const oldPriceCurrency = document.querySelector("head > meta[property=\"product:original_price:currency\"]").getAttribute('content');
+            const price = document.querySelector("head > meta[property=\"product:price:amount\"]").getAttribute('content');
+            const priceCurrency = document.querySelector("head > meta[property=\"product:price:currency\"]").getAttribute('content');
             return {url, description, price, oldPrice, oldPriceCurrency, priceCurrency};
         } catch (e) {
             throw Error("There is an error parsing website")
-        }
-    }
-
-    getMeta = (property) => `<meta property="${property}" content="`;
-
-    getContent = (context, property) => {
-        let regular = new RegExp(`${this.getMeta(property)}(.*?)">`, "g");
-        let result = context.match(regular);
-
-        if (result != null) {
-            return result[0].substring(this.getMeta(property).length, result[0].length - 2);
         }
     }
 }
@@ -59,5 +48,20 @@ export class Rozetka extends Shop {
         let oldPrice = item.old_price;
         let href = item.href;
         return {href, description, price, oldPrice, oldPriceCurrency: 'UAH', priceCurrency: 'UAH'};
+    }
+}
+
+export class Makeup extends Shop {
+    constructor(domain) {
+        super(domain);
+    }
+
+    async getMetadata(url) {
+        let document = await getHTML(url, true);
+        let description = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__description > div.product-item__name").innerHTML;
+        let price = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__buy > div.product-item__row > div.product-item__price-wrap > span.product-item__price > div > span.price_item").innerHTML;
+        let oldPrice = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__buy > div.product-item__row > div.product-item__price-wrap > span.product-item__old-price > span.price_item").innerHTML;
+        let currency = 'UAH';
+        return {url, description, price, oldPrice, oldPriceCurrency: currency, priceCurrency: currency};
     }
 }
