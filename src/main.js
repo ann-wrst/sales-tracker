@@ -83,7 +83,7 @@ async function trackProduct(url, domain, chatID) {
             }
             case 'rozetka.com.ua':
             case 'bt.rozetka.com.ua':
-            case 'hard.rozetka.com.ua':{
+            case 'hard.rozetka.com.ua': {
                 let rozetkaShop = new Rozetka(domain);
                 data = await rozetkaShop.getMetadata(url);
                 break;
@@ -96,6 +96,7 @@ async function trackProduct(url, domain, chatID) {
             default:
                 return 'Unable to parse this site so far';
         }
+        if (Object.keys(data).length === 0) return 'Unable to get data';
         let notTracked = await addToDB(url, data.description, domain, data.price, data.oldPrice, chatID);
         if (!notTracked) return `Product is already tracked\n${data.description}\nOld price ${data.oldPrice} ${data.oldPriceCurrency}\nNew price ${data.price} ${data.priceCurrency}`;
 

@@ -16,5 +16,8 @@
     "sqlite-sync": "^0.3.9",
     "sqlite3": "^5.0.2",
     "telegraf": "^4.4.1"
+  },
+  "engines": {
+    "node": "14.x"
   }
 }
