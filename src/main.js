@@ -9,7 +9,7 @@ import Tracker from "./Tracker.js";
 
 let url;
 reload();
-const bot = new Telegraf(token);
+const bot = new Telegraf(token || process.env.token);
 
 bot.launch().then(async () => {
     let tracker = new Tracker(bot);

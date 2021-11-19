@@ -44,7 +44,7 @@ class Tracker {
                 }
                 await this.actualizePrice(db_item, answer);
             }
-        }, timerInterval);
+        }, timerInterval || 512000);
     }
 
     async actualizePrice(db_item, answer) {

@@ -11,7 +11,7 @@ export default function writeLog(action, chatId) {
 
 function writeToCSV(records) {
     const csvWriter = createObjectCsvWriter({
-        path: logPath,
+        path: logPath || './logs.csv',
         header: [
             {id: 'time', title: 'TIME'},
             {id: 'action', title: 'ACTION'},
