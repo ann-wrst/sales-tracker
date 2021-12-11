@@ -24,19 +24,45 @@ bot.start(async (ctx) => {
     writeLog(`Start command of user ${chat}`, ctx.message.chat.id);
 })
 
-bot.command('list', async (ctx) => {
-    let list = await getList(ctx.message.chat.id);
+function getMesForI(list, start, end) {
     let message = "";
-    if (list.length === 0) message = 'No items were found';
-    for (let i = 0; i < list.length; i++) {
-        message += `${i + 1}\. ` + JSON.stringify(list[i].description) + '' + JSON.stringify(list[i].url) + '\n ' + JSON.stringify(list[i].new_price) + '\n';
+    let shownMessage = ""
+    for (let i = start; i < end; i++) {
+        message += `${i + 1}\. <a href=${JSON.stringify(list[i].url)}>${JSON.stringify(list[i].description)}</a>` + '\n ' + JSON.stringify(list[i].new_price) + '\n';
+        shownMessage += `${i + 1}\. ${JSON.stringify(list[i].description)}` + '\n ' + JSON.stringify(list[i].new_price) + '\n';
     }
-    if (message.length > 4096) {
-        for (let x = 0; x < message.length; x += 4096) {
-            await ctx.telegram.sendMessage(ctx.message.chat.id, `${message.slice(x, x + 4096)}`);
+    return {message, meslength: shownMessage.length}
+}
+
+bot.command('list', async (ctx) => {
+        let list = await getList(ctx.message.chat.id);
+        let message = "";
+        if (list.length === 0) message = 'No items were found';
+        let lastListIndex = 0;
+
+        for (let i = lastListIndex; i < list.length; i++) {
+            message = "";
+            if (getMesForI(list, lastListIndex, i).meslength > 4096) {
+                message = getMesForI(list, lastListIndex, i - 1).message;
+                lastListIndex = i - 1;
+            }
+            if (message !== "") {
+                await ctx.telegram.sendMessage(ctx.message.chat.id, `${message}`, {
+                    parse_mode: "HTML",
+                    disable_web_page_preview: true
+                });
+
+            } else if (i === list.length - 1) {
+                message = getMesForI(list, lastListIndex, i).message;
+                await ctx.telegram.sendMessage(ctx.message.chat.id, `${message}`, {
+                    parse_mode: "HTML",
+                    disable_web_page_preview: true
+                });
+            }
         }
-    } else await ctx.telegram.sendMessage(ctx.message.chat.id, `${message}`);
-})
+    }
+)
+
 bot.command('delete', async (ctx) => {
     let list = await getList(ctx.message.chat.id);
 
@@ -52,7 +78,9 @@ bot.command('delete', async (ctx) => {
         return;
     }
     if (deleteItem(itemId)) {
-        await ctx.telegram.sendMessage(ctx.message.chat.id, `The item ${item.url} was deleted`);
+        await ctx.telegram.sendMessage(ctx.message.chat.id, `The item <a href="${item.url}">${item.description}</a> was deleted`, {
+            parse_mode: "HTML"
+        });
         writeLog(`Deleted item ${item.url}`, ctx.message.chat.id);
     } else await ctx.telegram.sendMessage(ctx.message.chat.id, `There is an error deleting item`);
 })

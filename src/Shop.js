@@ -37,7 +37,7 @@ export class Rozetka extends Shop {
 
     async getMetadata(url) {
         //get id from url
-        let id = url.match('\\/p[0-9]{7,9}\\/');
+        let id = url.match('\\/p[0-9]{6,9}\\/');
         if (!id) throw new Error('The product with these id is not supported to be tracked'); else {
             id = id[0].substring(2, id[0].length - 1);
         }
