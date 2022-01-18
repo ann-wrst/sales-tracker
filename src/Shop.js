@@ -45,7 +45,7 @@ export class Rozetka extends Shop {
         let item = response.data[0];
         let description = item.title;
         let price = item.price;
-        let oldPrice = item.old_price;
+        let oldPrice = item.old_price === '0' ? item.old_price : item.price;
         let href = item.href;
         return {href, description, price, oldPrice, oldPriceCurrency: 'UAH', priceCurrency: 'UAH'};
     }
