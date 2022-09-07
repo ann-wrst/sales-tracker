@@ -17,6 +17,7 @@ export class Reserved extends Shop {
 
     async getMetadata(url) {
         let document = await getHTML(url, true);
+        console.log(url);
         try {
             const description = document.querySelector("head > meta[property=\"og:description\"]").getAttribute('content');
             const oldPrice = document.querySelector("head > meta[property=\"product:original_price:amount\"]").getAttribute('content');
