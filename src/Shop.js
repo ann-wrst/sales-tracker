@@ -59,7 +59,7 @@ export class Makeup extends Shop {
 
     async getMetadata(url) {
         let document = await getHTML(url, true);
-        let description = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__description > div.product-item__name")?.innerHTML;
+        let description = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__description > h1 > span.product-item__name")?.innerHTML;
         if (!description) return {};
         let price = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__buy > div.product-item__row > div.product-item__price-wrap > span.product-item__price > div > span.price_item").innerHTML;
         let oldPrice = document.querySelector("body > div.site-wrap > div.main-wrap > div > div > div:nth-child(2) > div.product-item > div > div.product-item__buy > div.product-item__row > div.product-item__price-wrap > span.product-item__old-price > span.price_item").innerHTML;

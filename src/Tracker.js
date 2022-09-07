@@ -42,7 +42,6 @@ class Tracker {
                     default:
                         break;
                 }
-                console.log('HERE');
                 await this.actualizePrice(db_item, answer);
             }
         }, timerInterval || 512000);

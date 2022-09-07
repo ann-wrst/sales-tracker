@@ -39,8 +39,7 @@ async function trackProduct(url, domain, chatID) {
             case 'sinsay.com':
             case 'housebrand.com':
             case 'mohito.com':
-            case 'cropp.com':
-            case 'localhost:8081': {
+            case 'cropp.com': {
                 let reservedShop = new Reserved(domain);
                 data = await reservedShop.getMetadata(url);
                 break;
@@ -62,9 +61,9 @@ async function trackProduct(url, domain, chatID) {
         }
         if (Object.keys(data).length === 0) return 'Unable to get data';
         let notTracked = await addToDB(url, data.description, domain, data.price, data.oldPrice, chatID);
-        if (!notTracked) return `Product is already tracked\n${data.description}\nOld price ${data.oldPrice} ${data.oldPriceCurrency}\nNew price ${data.price} ${data.priceCurrency}`;
-
-        return `${data.description}\nOld price ${data.oldPrice} ${data.oldPriceCurrency}\nNew price ${data.price} ${data.priceCurrency}`;
+        let message = data.oldPrice === data.price ? `${data.description}\nPrice ${data.price} ${data.priceCurrency}` : `${data.description}\nOld price ${data.oldPrice} ${data.oldPriceCurrency}\nNew price ${data.price} ${data.priceCurrency}`;
+        if (!notTracked) return `Product is already tracked\n${message}`;
+        else return `${message}`;
     } catch (e) {
         return e.message;
     }
