@@ -9,6 +9,7 @@ pipeline {
                 echo "Building.."
                 sh '''
                 cd src
+                npm install
                 nodemon src/main.js
                 '''
             }
