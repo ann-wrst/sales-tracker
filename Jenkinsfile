@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    tools {
+        nodejs 'local'
+    }
     triggers {
         pollSCM 'H/5 * * * *'
     }
